@@ -94,7 +94,7 @@ def index_frames(
             (
                 str(record["id"]),
                 video_id,
-                float(record["t"]),
+                float(str(record["t"])),
                 encoded[i],
                 {"thumbnail": str(record["thumbnail"]), "scene_id": record["scene_id"]},
             )
