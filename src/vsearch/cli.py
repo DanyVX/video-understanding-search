@@ -101,11 +101,15 @@ def repair_command(prune_vectors: bool = False) -> None:
     root = load_settings().data_dir
     errors = Manifest(root).repair()
     count = prune_orphan_vectors(root) if prune_vectors else 0
-    typer.echo(json.dumps({
-        "marked_failed": errors,
-        "pruned_vectors": count,
-        "remaining_errors": verify_all(root),
-    }))
+    typer.echo(
+        json.dumps(
+            {
+                "marked_failed": errors,
+                "pruned_vectors": count,
+                "remaining_errors": verify_all(root),
+            }
+        )
+    )
 
 
 @app.command("delete")
