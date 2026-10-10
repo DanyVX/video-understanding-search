@@ -13,6 +13,7 @@ authors = [{name = "Danial Hassan"}]
 dependencies = [
   "pydantic-settings==2.6.1",
   "typer==0.26.3",
+  "Pillow==12.3.0",
 ]
 
 [project.optional-dependencies]

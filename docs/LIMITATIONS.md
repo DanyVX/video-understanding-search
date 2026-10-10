@@ -33,3 +33,17 @@ network access) have initial unit tests.
 End-to-end deletion/repair tests, model/dataset license review, annotated
 evaluation corpus, benchmark scripts/results, functioning UI, threat model,
 demo recording, coverage/CI verification and semver tag.
+
+
+## M1 ingestion scope
+
+M1 supplies uniform frame sampling, a sample-based scene-change heuristic
+(not complete PySceneDetect boundary detection), content hashes, bounded chunk
+processing, SQLite checkpoints and frame thumbnails. Resumption skips committed
+chunks. Unsupported codecs and decode failures stop the affected video while
+other videos can still be ingested. Source paths are retained only by explicit
+`--keep-source`; source files are never copied.
+Audio-only inputs have no video frames. HDR/10-bit conversion depends on ffmpeg
+defaults; tone mapping and rotation have not been individually validated.
+Thumbnail encryption, vector deletion and atomic cross-store publication remain
+release blockers. Static footage may yield very few frames by deduplication.

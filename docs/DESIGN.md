@@ -59,3 +59,13 @@ options before expanding to larger models.
   default; benchmark datasets require a fresh license/redistribution check.
 - Test thresholds and fusion weights will be selected on validation only.
 - Appropriate encryption/key-management design remains open before personal data.
+
+## M1 ingestion implementation note (2026-10-10)
+
+Chunked ffmpeg uniform sampling bounds memory without needing to load full
+videos. Within the sampled sequence, dHash distance approximates abrupt
+scene cuts and removes near-identical frames. This is **not** full-frame
+PySceneDetect; the visual recall/throughput comparison is deferred until
+an evaluation corpus exists. Atomic SQLite frame/checkpoint commits avoid
+claiming a partially written chunk as complete. Index mutation during
+querying is deferred to M2 with an explicit read/write lock.
