@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=75,<76", "wheel>=0.45,<1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-understanding-search"
+version = "0.1.0a0"
+description = "Retrieval of timestamped video moments with visual and speech search"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = {file = "LICENSE"}
+authors = [{name = "Danial Hassan"}]
+dependencies = [
+  "pydantic-settings==2.6.1",
+  "typer==0.15.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "hypothesis==6.123.17",
+  "mypy==1.14.1",
+  "pip-audit==2.7.3",
+  "pre-commit==4.0.1",
+  "pytest==8.3.4",
+  "pytest-cov==6.0.0",
+  "ruff==0.9.6",
+]
+
+[project.scripts]
+vsearch = "vsearch.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["vsearch"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+  "slow: CPU-intensive tests excluded from fast test suite",
+  "gpu: GPU-only tests excluded from default test suite",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["vsearch"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = ["if __name__ == .__main__.:"]
