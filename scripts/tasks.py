@@ -21,8 +21,17 @@ COMMANDS: dict[str, list[list[str]]] = {
     ],
     "typecheck": [[sys.executable, "-m", "mypy", "src"]],
     "test": [
-        [sys.executable, "-m", "pytest", "--cov=vsearch", "--cov-branch",
-         "--cov-report=term-missing", "--cov-fail-under=70", "-m", "not slow and not gpu"]
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "--cov=vsearch",
+            "--cov-branch",
+            "--cov-report=term-missing",
+            "--cov-fail-under=70",
+            "-m",
+            "not slow and not gpu",
+        ]
     ],
     "test-fast": [[sys.executable, "-m", "pytest", "-q", "-m", "not slow and not gpu"]],
     "bench": [[sys.executable, "-m", "vsearch", "doctor", "--json"]],
@@ -32,16 +41,17 @@ COMMANDS: dict[str, list[list[str]]] = {
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print("Usage: python scripts/tasks.py <setup|lint|format|typecheck|test|test-fast|"
-              "bench|run|docker-build|clean>", file=sys.stderr)
+        print(
+            "Usage: python scripts/tasks.py <setup|lint|format|typecheck|test|test-fast|"
+            "bench|run|docker-build|clean>",
+            file=sys.stderr,
+        )
         return 2
     task = sys.argv[1]
     if task == "setup":
         if shutil.which("uv"):
             return subprocess.call(["uv", "sync", "--extra", "dev"], cwd=ROOT)
-        return subprocess.call(
-            [sys.executable, "-m", "pip", "install", "-e", ".[dev]"], cwd=ROOT
-        )
+        return subprocess.call([sys.executable, "-m", "pip", "install", "-e", ".[dev]"], cwd=ROOT)
     if task == "docker-build":
         print("Docker image is not implemented. M6 will add a reviewed Dockerfile.")
         return 2
