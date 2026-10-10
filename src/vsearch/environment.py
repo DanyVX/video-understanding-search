@@ -13,15 +13,20 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-PACKAGES = ("pydantic-settings", "typer", "numpy", "faiss-cpu", "open-clip-torch",
-            "faster-whisper", "scenedetect")
+PACKAGES = (
+    "pydantic-settings",
+    "typer",
+    "numpy",
+    "faiss-cpu",
+    "open-clip-torch",
+    "faster-whisper",
+    "scenedetect",
+)
 
 
 def _output(argv: list[str], timeout: float = 3.0) -> str | None:
     try:
-        result = subprocess.run(
-            argv, check=False, capture_output=True, text=True, timeout=timeout
-        )
+        result = subprocess.run(argv, check=False, capture_output=True, text=True, timeout=timeout)
     except (OSError, subprocess.TimeoutExpired):
         return None
     if result.returncode:
@@ -71,8 +76,7 @@ def collect_environment(*, check_network: bool = False) -> dict[str, Any]:
     """
     disk = shutil.disk_usage(Path.home())
     gpu = _output(
-        ["nvidia-smi", "--query-gpu=name,driver_version,memory.total",
-         "--format=csv,noheader"],
+        ["nvidia-smi", "--query-gpu=name,driver_version,memory.total", "--format=csv,noheader"],
     )
     cuda_details = _output(["nvcc", "--version"])
     ffmpeg = _output(["ffmpeg", "-version"])
