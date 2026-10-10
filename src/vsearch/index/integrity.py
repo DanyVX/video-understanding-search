@@ -18,14 +18,8 @@ def verify_all(root: Path) -> list[str]:
             foreign = conn.execute("PRAGMA foreign_key_check").fetchall()
             if foreign:
                 problems.append(f"manifest-foreign-key-errors:{len(foreign)}")
-            frames = {
-                str(row["id"])
-                for row in conn.execute("SELECT id FROM frames").fetchall()
-            }
-            video_ids = {
-                str(row["id"])
-                for row in conn.execute("SELECT id FROM videos").fetchall()
-            }
+            frames = {str(row["id"]) for row in conn.execute("SELECT id FROM frames").fetchall()}
+            video_ids = {str(row["id"]) for row in conn.execute("SELECT id FROM videos").fetchall()}
         vectors = SQLiteVectorStore(root)
         problems.extend(vectors.verify(video_ids))
         with vectors._connect() as conn:
@@ -52,16 +46,12 @@ def prune_orphan_vectors(root: Path) -> int:
         frames = {str(row[0]) for row in conn.execute("SELECT id FROM frames")}
     store = SQLiteVectorStore(root)
     with store.lock, store._connect() as conn:
-        rows = conn.execute(
-            "SELECT collection,item_id,video_id FROM vectors"
-        ).fetchall()
+        rows = conn.execute("SELECT collection,item_id,video_id FROM vectors").fetchall()
         bad = [
             (str(collection), str(item_id))
             for collection, item_id, video_id in rows
             if str(video_id) not in videos
             or (collection == "visual" and str(item_id) not in frames)
         ]
-        conn.executemany(
-            "DELETE FROM vectors WHERE collection=? AND item_id=?", bad
-        )
+        conn.executemany("DELETE FROM vectors WHERE collection=? AND item_id=?", bad)
     return len(bad)
