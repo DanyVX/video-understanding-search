@@ -17,7 +17,7 @@ been measured. The synthetic evaluation only checks ranking/metadata plumbing.
   filtering. Urdu-English code switching, overlapping speakers, music hallucination
   and multi-hour timestamp drift remain unmeasured.
 - M4 caption provider protocol, budget gate and frame/model/prompt cache;
-  **no configured production caption VLM and no indexed caption search channel**.
+  **no configured production caption VLM; manually imported captions do have a BM25 index**.
 - M5 weighted reciprocal rank fusion with absent-channel renormalization; tuning
   and reranking are not empirically validated.
 - M6 local FastAPI/UI search, optional retained media path, HTTP range seeking,

@@ -180,3 +180,35 @@ def serve_command(host: str = "127.0.0.1", port: int = 8000) -> None:
         typer.echo("Refusing non-loopback binding without auth", err=True)
         raise typer.Exit(code=2)
     uvicorn.run("vsearch.api.app:app", host=host, port=port)
+
+
+@app.command("caption-import")
+def caption_import_command(path: Path) -> None:
+    """Import manually reviewed time-aligned captions without invoking a VLM."""
+    from pydantic import BaseModel, Field, ValidationError
+
+    from vsearch.asr.transcript import Segment
+    from vsearch.index.caption_index import CaptionIndex
+
+    class Item(BaseModel):
+        start: float = Field(ge=0, allow_inf_nan=False)
+        end: float = Field(ge=0, allow_inf_nan=False)
+        text: str = Field(min_length=1, max_length=1000)
+
+    class Payload(BaseModel):
+        video_id: str = Field(pattern=r"^[a-f0-9]{24}$")
+        model_key: str = Field(default="manual-v1", min_length=1, max_length=200)
+        segments: list[Item] = Field(max_length=10000)
+
+    try:
+        if not path.is_file() or path.stat().st_size > 2_000_000:
+            raise ValueError("Caption JSON not found or above 2 MB")
+        payload = Payload.model_validate_json(path.read_text(encoding="utf-8"))
+        segments = [Segment(item.start, item.end, item.text) for item in payload.segments]
+        CaptionIndex(load_settings().data_dir).replace(
+            payload.video_id, segments, model_key=payload.model_key
+        )
+    except (ValueError, ValidationError, OSError, UnicodeError) as exc:
+        typer.echo(f"Caption import failed: {type(exc).__name__}", err=True)
+        raise typer.Exit(code=2) from None
+    typer.echo(json.dumps({"indexed_captions": len(segments)}))

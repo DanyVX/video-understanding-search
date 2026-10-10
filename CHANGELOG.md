@@ -15,6 +15,7 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/).
 - M7 temporal IoU, Recall@k, MRR and provenance-bearing evaluator.
 - M9 bounded async local-file ingestion jobs with staging validation.
 - M10 synthetic video/demo generator and explicitly labeled synthetic smoke benchmark.
+- M11 independent caption BM25 channel, validated caption JSON import and fusion.
 
 ### Security
 - No real video or model weights committed; secret scanner and dependency audit in CI.

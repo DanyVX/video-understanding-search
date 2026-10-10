@@ -6,6 +6,7 @@ import math
 from functools import lru_cache
 from pathlib import Path
 
+from vsearch.index.caption_index import CaptionIndex
 from vsearch.index.transcripts import TranscriptIndex
 from vsearch.retrieve.fusion import Hit, Moment, merge_moments, reciprocal_rank_fusion
 
@@ -45,6 +46,11 @@ def search_moments(
             for result in transcript_hits
         ]
     }
+    caption_hits = CaptionIndex(root).search(query, limit=min(200, limit * 4))
+    channels["caption"] = [
+        Hit(item.video_id, item.start, item.end, item.score, "caption", item.snippet)
+        for item in caption_hits
+    ]
     if include_visual:
         from vsearch.embed.visual import VisualEncoder
         from vsearch.index.vectors import SQLiteVectorStore

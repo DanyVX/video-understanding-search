@@ -50,11 +50,14 @@ flowchart LR
     F --> I[Weighted RRF / moment merge]
     H --> I
     I --> J[FastAPI search + local HTML video seek]
-    K[Optional external VLM caption provider] -. Budgeted interface only .-> I
+    K[Reviewed caption JSON] --> L[Timestamped caption SQLite + BM25]
+    L --> I
+    M[Optional VLM provider / cost gate] -. Not configured .-> K
 ```
 
 Caption generation has a provider protocol, dry-run cost checking and a frame/model/prompt
-cache. **It is not connected as a deployed third retrieval index.**
+cache. An independent caption BM25 index is implemented, populated via validated
+manual-caption JSON imports; no live VLM provider is configured.
 FAISS is an optional acceleration path, not a separate always-running service.
 
 ## Quickstart
@@ -107,7 +110,10 @@ python -m vsearch search "a person opens a laptop" --visual
 ```
 
 `VIDEO_ID` is returned by `vsearch ingest` or `vsearch videos`.
-The text and visual search paths can be fused after both modalities are indexed.
+The text, caption and visual search paths can be fused after their respective
+channels are indexed. Import reviewed caption JSON with
+`python -m vsearch caption-import captions.json` where captions.json contains
+`{"video_id":"...","model_key":"manual-v1","segments":[{"start":1,"end":3,"text":"a laptop opens"}]}`.
 For local HTTP use:
 
 ```sh
@@ -157,8 +163,7 @@ unnecessary services. See [decision log](docs/DESIGN.md).
 ## Limitations
 
 Uniform frame sampling with a sample-level scene-change heuristic is not
-full PySceneDetect, visual weights are optional, captions are not wired to a
-retrieval channel, and evaluation currently lacks a real annotated dataset.
+full PySceneDetect, visual weights are optional, captions require manually reviewed imports (no live caption model), and evaluation currently lacks a real annotated dataset.
 See [limitations](docs/LIMITATIONS.md) and [model card](MODEL_CARD.md).
 
 ## Roadmap
@@ -169,6 +174,7 @@ See [limitations](docs/LIMITATIONS.md) and [model card](MODEL_CARD.md).
 - [x] M3: optional Whisper adapter, transcript windows and SQLite BM25
 - [x] M4: optional budgeted caption interface and content-hash cache
 - [x] M5: rank fusion and moment merge
+- [x] M11: caption SQLite retrieval and validated JSON import
 - [x] M6: local search API/UI, media seeking and derived-artifact erase path
 - [x] M7 (partial): evaluation metrics, JSON runner and synthetic tests
 - [ ] M7 (real validation): authorized corpus, human annotations, full ablations
