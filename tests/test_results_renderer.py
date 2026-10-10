@@ -1,5 +1,7 @@
 """Unmeasured values can never silently become benchmark claims."""
 
+from pathlib import Path
+
 import pytest
 
 from scripts.render_results import load_measurements, render, replace_table
@@ -15,10 +17,8 @@ def test_invalid_measurement_rejected() -> None:
         render({"metrics": {"search_latency_p95_ms": -1}})
 
 
-def test_provenance_is_required(tmp_path: pytest.TempPathFactory) -> None:
-    from pathlib import Path
-
-    result = Path(str(tmp_path)) / "result.json"
+def test_provenance_is_required(tmp_path: Path) -> None:
+    result = tmp_path / "result.json"
     result.write_text('{"metrics":{"video_recall_at_5":1.0}}', encoding="utf-8")
     with pytest.raises(ValueError, match="environment.git_commit"):
         load_measurements(result)

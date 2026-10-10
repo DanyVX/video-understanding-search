@@ -9,7 +9,7 @@ import shutil
 import socket
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -79,7 +79,7 @@ def collect_environment(*, check_network: bool = False) -> dict[str, Any]:
     ffprobe = _output(["ffprobe", "-version"])
 
     return {
-        "captured_at_utc": datetime.now(timezone.utc).isoformat(),
+        "captured_at_utc": datetime.now(UTC).isoformat(),
         "os": platform.platform(),
         "shell": Path(os.getenv("SHELL") or os.getenv("COMSPEC") or "unknown").name,
         "python": platform.python_version(),

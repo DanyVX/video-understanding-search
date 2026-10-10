@@ -43,7 +43,7 @@ def render(data: dict[str, Any] | None) -> str:
         value = measured.get(key)
         if value is None:
             shown = "TBD (not yet measured)"
-        elif isinstance(value, bool) or not isinstance(value, (int, float)):
+        elif isinstance(value, bool) or not isinstance(value, int | float):
             raise ValueError(f"Non-numeric measured metric: {key}")
         elif not math.isfinite(value) or value < 0:
             raise ValueError(f"Invalid measured metric: {key}")
