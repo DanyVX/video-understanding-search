@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import pytest
-
 from scripts.render_results import load_measurements, render, replace_table
 
 
