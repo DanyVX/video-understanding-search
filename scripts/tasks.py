@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 COMMANDS: dict[str, list[list[str]]] = {
     "lint": [
         [sys.executable, "-m", "ruff", "check", "."],
+        [sys.executable, "-m", "ruff", "format", "--diff", "."],
         [sys.executable, "-m", "ruff", "format", "--check", "."],
     ],
     "format": [
