@@ -91,12 +91,12 @@ def ui() -> str:
     return """<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Video Moment Search</title>
-<style>body{font:16px system-ui;margin:4rem auto;max-width:780px;padding:1rem;background:#111827;color:#e5e7eb}
+<style>body{font:16px system-ui;margin:4rem auto;max-width:780px;padding:1rem;\nbackground:#111827;color:#e5e7eb}
 input{padding:12px;width:70%;background:#1f2937;color:white;border:1px solid #4b5563}
 button{padding:12px;cursor:pointer}article{padding:18px;margin-top:14px;background:#1f2937;border-radius:12px}
 small{color:#9ca3af}</style></head><body><h1>Video Moment Search</h1>
 <p>Timestamped transcript search (visual model integration pending)</p>
-<form id="form"><input id="q" required maxlength="512" aria-label="Search videos" placeholder="Find spoken words…">
+<form id="form"><input id="q" required maxlength="512" aria-label="Search videos" \nplaceholder="Find spoken words…">
 <button type="submit">Search</button></form><section id="results" aria-live="polite"></section>
 <script>
 const form=document.getElementById('form'), results=document.getElementById('results');
