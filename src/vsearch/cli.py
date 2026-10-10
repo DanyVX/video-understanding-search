@@ -10,12 +10,12 @@ import typer
 from pydantic import ValidationError
 
 from vsearch import __version__
-from vsearch.environment import collect_environment
 from vsearch.embed.visual import OpenClipEncoder, index_frames
-from vsearch.index.vectors import SQLiteVectorStore
-from vsearch.retrieve.moments import search_visual
+from vsearch.environment import collect_environment
 from vsearch.index.manifest import Manifest
+from vsearch.index.vectors import SQLiteVectorStore
 from vsearch.ingest.pipeline import IngestOptions, delete_video, ingest
+from vsearch.retrieve.moments import search_visual
 from vsearch.settings import load_settings
 
 app = typer.Typer(
@@ -135,10 +135,9 @@ def search_visual_command(query: str, limit: int = 20) -> None:
     settings = load_settings()
     try:
         from dataclasses import asdict
+
         encoder = OpenClipEncoder()
-        moments = search_visual(
-            SQLiteVectorStore(settings.data_dir), encoder, query, k=limit
-        )
+        moments = search_visual(SQLiteVectorStore(settings.data_dir), encoder, query, k=limit)
         typer.echo(json.dumps([asdict(m) for m in moments]))
     except (ImportError, RuntimeError, ValueError) as exc:
         typer.echo(f"Visual search unavailable: {type(exc).__name__}", err=True)
