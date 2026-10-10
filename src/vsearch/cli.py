@@ -85,17 +85,27 @@ def videos_command() -> None:
 @app.command("verify")
 def verify_command() -> None:
     """Check thumbnail references against persisted manifest."""
-    errors = Manifest(load_settings().data_dir).verify()
+    from vsearch.index.integrity import verify_all
+
+    errors = verify_all(load_settings().data_dir)
     typer.echo(json.dumps({"consistent": not errors, "errors": errors}))
     if errors:
         raise typer.Exit(code=1)
 
 
 @app.command("repair")
-def repair_command() -> None:
-    """Mark missing-thumbnail videos failed; safe reingest repairs them."""
-    errors = Manifest(load_settings().data_dir).repair()
-    typer.echo(json.dumps({"marked_failed": errors}))
+def repair_command(prune_vectors: bool = False) -> None:
+    """Mark broken thumbnails failed; optionally prune orphan vectors."""
+    from vsearch.index.integrity import prune_orphan_vectors, verify_all
+
+    root = load_settings().data_dir
+    errors = Manifest(root).repair()
+    count = prune_orphan_vectors(root) if prune_vectors else 0
+    typer.echo(json.dumps({
+        "marked_failed": errors,
+        "pruned_vectors": count,
+        "remaining_errors": verify_all(root),
+    }))
 
 
 @app.command("delete")
