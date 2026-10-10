@@ -19,9 +19,11 @@ def fake_media(tmp_path: Path) -> Path:
 
 def fake_info(duration: float = 5.0, audio_only: bool = False) -> probe.MediaInfo:
     return probe.MediaInfo(
-        duration=duration, width=0 if audio_only else 60,
+        duration=duration,
+        width=0 if audio_only else 60,
         height=0 if audio_only else 60,
-        has_audio=audio_only, audio_only=audio_only,
+        has_audio=audio_only,
+        audio_only=audio_only,
     )
 
 
@@ -71,7 +73,10 @@ def test_failed_decode_has_resumable_checkpoint(
     assert db.chunks_done(ident) == {0}
     assert db.frames(ident)
     monkeypatch.setattr(pipeline, "run_media_command", fake_decode)
-    assert pipeline.ingest(path, db, pipeline.IngestOptions(fps=1, chunk_seconds=2))["status"] == "done"
+    assert (
+        pipeline.ingest(path, db, pipeline.IngestOptions(fps=1, chunk_seconds=2))["status"]
+        == "done"
+    )
     assert db.chunks_done(ident) == {0, 1, 2}
 
 
@@ -93,21 +98,25 @@ def test_safe_delete_rejects_paths(tmp_path: Path) -> None:
         assert not pipeline.delete_video(db, bad)
 
 
-def test_probe_normal_and_audio_streams(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_probe_normal_and_audio_streams(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     path = fake_media(tmp_path)
     monkeypatch.setattr(probe.shutil, "which", lambda _exe: "/mock/ffprobe")
     payload = {
         "format": {"duration": "4.25"},
         "streams": [
-            {"codec_type": "video", "width": 640, "height": 360,
-             "codec_name": "h264", "tags": {"rotate": "90"}},
+            {
+                "codec_type": "video",
+                "width": 640,
+                "height": 360,
+                "codec_name": "h264",
+                "tags": {"rotate": "90"},
+            },
             {"codec_type": "audio", "codec_name": "aac"},
         ],
     }
     monkeypatch.setattr(
-        probe, "run_media_command",
+        probe,
+        "run_media_command",
         lambda *a, **k: subprocess.CompletedProcess([], 0, json.dumps(payload).encode(), b""),
     )
     info = probe.probe(path)
@@ -116,13 +125,12 @@ def test_probe_normal_and_audio_streams(
     assert info.rotation == 90
 
 
-def test_probe_rejects_malformed_metadata(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_probe_rejects_malformed_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     path = fake_media(tmp_path)
     monkeypatch.setattr(probe.shutil, "which", lambda _exe: "/mock/ffprobe")
     monkeypatch.setattr(
-        probe, "run_media_command",
+        probe,
+        "run_media_command",
         lambda *a, **k: subprocess.CompletedProcess([], 0, b"not-json", b""),
     )
     with pytest.raises(probe.MediaError, match="malformed"):
