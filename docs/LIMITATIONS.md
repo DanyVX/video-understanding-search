@@ -1,49 +1,64 @@
-# Known limitations and not-yet-implemented safeguards
+# Honest limitations and release blockers
 
-M0 has **no** video ingest, embedding, ASR, retrieval, API, UI, benchmark, media
-deletion or encryption at rest. It must not be presented as production-ready.
+This is a CPU-first, **single-user local research prototype**, not a production
+biometric/video platform. No benchmark number on licensed natural footage has
+been measured. The synthetic evaluation only checks ranking/metadata plumbing.
 
-- No GPU or Docker was available in the build execution container. This does not
-  describe the developer's Windows laptop or any deployment machine.
-- Python 3.11/3.12 CI and fresh-clone installation are not yet verified until CI runs.
-  A dependency lockfile is not generated in this network-restricted workspace.
-- The developer's dataset and video rights are not known. Do not ingest personal
-  footage into hosted services without explicit authorization.
-- CLIP can fail on counting, small objects, negation, OCR, temporal relations,
-  demographic/lighting shifts and non-English prompts.
-- Whisper may hallucinate speech over silence/music; Urdu-English switching,
-  overlap and long-file timestamp drift require separate evaluation.
-- Captioning could hallucinate, leak private imagery to hosted providers or
-  generate unexpected costs; disabled by default.
-- Index consistency, crash recovery, deletion and safe subprocess controls
-  need dedicated M1-M6 implementation/tests.
-- Adversarial text in captions/transcripts must be data, never operational
-  instructions to any future VLM/LLM.
-- Low-confidence empty results, fairness and privacy controls require testing.
+## Implemented, with caveats
 
-## Edge cases not yet covered
+- M1 ffprobe/ffmpeg video probing, chunked sampling, dHash dedupe and resumable
+  SQLite checkpoints. Scene IDs use sample-level hash jumps, **not true
+  PySceneDetect scene boundaries**. Timestamps are approximated from sampling fps,
+  so VFR, dropped frames and unusual codec timebases can produce drift.
+- M2 OpenCLIP encoder interface, model-isolated persistent SQLite vectors with
+  optional exact FAISS searches. Heavy model weights require deliberate installation
+  and are not embedded in this repository. No real-video CLIP quality report exists.
+- M3 local faster-whisper adapter with VAD, basic no-speech and repetition
+  filtering. Urdu-English code switching, overlapping speakers, music hallucination
+  and multi-hour timestamp drift remain unmeasured.
+- M4 caption provider protocol, budget gate and frame/model/prompt cache;
+  **no configured production caption VLM and no indexed caption search channel**.
+- M5 weighted reciprocal rank fusion with absent-channel renormalization; tuning
+  and reranking are not empirically validated.
+- M6 local FastAPI/UI search, optional retained media path, HTTP range seeking,
+  safe opaque thumbnail IDs and derived data deletion. Background job status
+  is in memory and does not survive server restart; manifest checkpoints do.
+  No login/authentication or multi-tenant controls exist. Serving on public
+  interfaces is explicitly unsupported.
+- M7 metrics for video Recall@k/MRR and moment Recall@k/temporal IoU; no real
+  corpus, human-validated 100-query set, complete ablation matrix, sensitivity
+  study, confidence interval results or full failure analysis yet.
 
-All specified M1-M6 ingest/retrieval/API edge cases are intentionally not covered
-by M0; see the user-supplied project spec and milestone-specific PR checklists.
-The core M0 behaviors (bad settings, missing tool, process timeout, no default
-network access) have initial unit tests.
+## Known unsupported/partially supported edge cases
 
-## Release blockers
+- DRM, unsupported codecs, color-management/HDR fidelity, rotated metadata,
+  exact VFR scene boundaries, perfect corruption recovery, subtitles as retrieval.
+- A fully atomic cross-database delete of thumbnails, transcript and vector rows:
+  SQLite manifest/transcripts and the independent vector DB are separate;
+  partial IO failures require verify/repair and may leave orphan vectors.
+- Concurrent index replacement during a query, globally durable background job
+  progress, true cancellable running decode, multi-tenant separation, rate limiting.
+- Large-scale vector retrieval rebuilds FAISS indices from SQLite on query;
+  it is not optimized for millions of embeddings.
+- CLIP weakness on object counts, negation, small objects, OCR, temporal ordering,
+  fine-grained relations, multilingual descriptions and skewed camera/lighting.
+- Cross-encoder reranking, caption hallucination audit, threat-modelled prompt
+  injection testing, optional redaction and encrypted sensitive data at rest.
+- Index model checkpoint revision/hash beyond a configured model string; model
+  upgrades require explicit full reindex and compatibility review.
+- A professional GIF of the UI, tested remote deployment, and complete user
+  benchmark are pending.
 
-End-to-end deletion/repair tests, model/dataset license review, annotated
-evaluation corpus, benchmark scripts/results, functioning UI, threat model,
-demo recording, coverage/CI verification and semver tag.
+## Safety and privacy
 
+Do not use private, biometric or identity-bearing footage. No at-rest encryption
+or authentication is provided. Caption providers could transmit imagery off-device;
+the default cost gate disallows invoking them. Do not trust text in caption or
+transcript sources as instructions. This prototype is suitable for local experiments
+with synthetic/permissioned non-sensitive video only.
 
-## M1 ingestion scope
+## Completion conditions
 
-M1 supplies uniform frame sampling, a sample-based scene-change heuristic
-(not complete PySceneDetect boundary detection), content hashes, bounded chunk
-processing, SQLite checkpoints and frame thumbnails. Resumption skips committed
-chunks. Unsupported codecs and decode failures stop the affected video while
-other videos can still be ingested. Source paths are retained only by explicit
-`--keep-source`; source files are never copied.
-Audio-only inputs have no video frames. HDR/10-bit conversion depends on ffmpeg
-defaults; tone mapping and rotation have not been individually validated.
-Thumbnail encryption, vector deletion and atomic cross-store publication remain
-release blockers. Static footage may yield very few frames by deduplication.
+Before claiming production readiness: audited and licensed real data;
+independent annotations; ASR/CLIP validation and ablations; security controls;
+durable media erasure; verified model terms; full demo capture; reviewed release tag.
