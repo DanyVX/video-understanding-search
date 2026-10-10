@@ -1,0 +1,1 @@
+"""Model-specific encoders: lazy loading prevents surprise weight downloads."""
