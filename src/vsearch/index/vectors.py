@@ -46,8 +46,10 @@ class VectorHit:
 
 class VectorStore(Protocol):
     def add(
-        self, collection: str, model_key: str, vectors: list[tuple[str, str, float, np.ndarray,
-        dict[str, Any]]]
+        self,
+        collection: str,
+        model_key: str,
+        vectors: list[tuple[str, str, float, np.ndarray, dict[str, Any]]],
     ) -> None: ...
 
     def search(
@@ -95,9 +97,7 @@ class SQLiteVectorStore:
                 (name, model_key, dims),
             )
         elif existing != (model_key, dims):
-            raise IndexMismatch(
-                "Incompatible model or dimension; use a new collection or reindex"
-            )
+            raise IndexMismatch("Incompatible model or dimension; use a new collection or reindex")
 
     def add(
         self,
@@ -116,10 +116,16 @@ class SQLiteVectorStore:
                 if t < 0 or not np.isfinite(t):
                     raise ValueError("Invalid timestamp")
                 self._assert_collection(conn, collection, model_key, int(emb.size))
-                prepared.append((
-                    collection, item_id, video_id, t, emb.tobytes(),
-                    json.dumps(payload, ensure_ascii=False),
-                ))
+                prepared.append(
+                    (
+                        collection,
+                        item_id,
+                        video_id,
+                        t,
+                        emb.tobytes(),
+                        json.dumps(payload, ensure_ascii=False),
+                    )
+                )
             conn.executemany(
                 """INSERT INTO vectors(collection,item_id,video_id,t,embedding,payload)
                    VALUES (?,?,?,?,?,?)
@@ -159,14 +165,21 @@ class SQLiteVectorStore:
             index = faiss.IndexFlatIP(matrix.shape[1])
             index.add(np.ascontiguousarray(matrix))
             scores, indices = index.search(vector.reshape(1, -1), min(limit, len(rows)))
-            order = list(zip(indices[0].tolist(), scores[0].tolist()))
+            order = list(zip(indices[0].tolist(), scores[0].tolist(), strict=False))
         else:
             scores_array = matrix @ vector
             rank = sorted(range(len(rows)), key=lambda i: (-float(scores_array[i]), rows[i][0]))
             order = [(i, float(scores_array[i])) for i in rank[:limit]]
         return [
-            VectorHit(str(rows[i][0]), str(rows[i][1]), float(rows[i][2]), float(score),
-                      json.loads(rows[i][4])) for i, score in order if i >= 0
+            VectorHit(
+                str(rows[i][0]),
+                str(rows[i][1]),
+                float(rows[i][2]),
+                float(score),
+                json.loads(rows[i][4]),
+            )
+            for i, score in order
+            if i >= 0
         ]
 
     def delete_video(self, video_id: str) -> int:

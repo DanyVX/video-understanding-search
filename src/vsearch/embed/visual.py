@@ -79,7 +79,7 @@ def index_frames(
     processed = 0
     cursor = 0
     while cursor < len(records):
-        batch = records[cursor:cursor + batch_size]
+        batch = records[cursor : cursor + batch_size]
         paths = [manifest.root / str(item["thumbnail"]) for item in batch]
         try:
             encoded = encoder.encode_images(paths)
@@ -91,8 +91,13 @@ def index_frames(
         if encoded.ndim != 2 or encoded.shape[0] != len(batch):
             raise ValueError("Encoder returned unexpected batch geometry")
         payload = [
-            (str(record["id"]), video_id, float(record["t"]), encoded[i],
-             {"thumbnail": str(record["thumbnail"]), "scene_id": record["scene_id"]})
+            (
+                str(record["id"]),
+                video_id,
+                float(record["t"]),
+                encoded[i],
+                {"thumbnail": str(record["thumbnail"]), "scene_id": record["scene_id"]},
+            )
             for i, record in enumerate(batch)
         ]
         vectors.add("visual", encoder.model_key, payload)
