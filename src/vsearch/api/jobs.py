@@ -71,7 +71,11 @@ class IngestJobs:
             return self._jobs.get(job_id)
 
     def submit(
-        self, root: Path, filename: str, max_bytes: int, *,
+        self,
+        root: Path,
+        filename: str,
+        max_bytes: int,
+        *,
         keep_source: bool = False,
     ) -> Job:
         path = safe_input(root, filename, max_bytes)
