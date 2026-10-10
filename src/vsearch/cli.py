@@ -11,6 +11,9 @@ from pydantic import ValidationError
 
 from vsearch import __version__
 from vsearch.environment import collect_environment
+from vsearch.embed.visual import OpenClipEncoder, index_frames
+from vsearch.index.vectors import SQLiteVectorStore
+from vsearch.retrieve.moments import search_visual
 from vsearch.index.manifest import Manifest
 from vsearch.ingest.pipeline import IngestOptions, delete_video, ingest
 from vsearch.settings import load_settings
@@ -105,3 +108,38 @@ def delete_command(video_id: str) -> None:
     typer.echo(json.dumps({"deleted": existed}))
     if not existed:
         raise typer.Exit(code=1)
+
+
+@app.command("index-visual")
+def index_visual_command(video_id: str, batch_size: int = 8) -> None:
+    """Load optional CLIP weights and index one video's frames."""
+    settings = load_settings()
+    db = Manifest(settings.data_dir)
+    if not db.get_video(video_id):
+        typer.echo("Unknown video_id", err=True)
+        raise typer.Exit(code=2)
+    try:
+        encoder = OpenClipEncoder()
+        count = index_frames(
+            db, SQLiteVectorStore(settings.data_dir), encoder, video_id, batch_size=batch_size
+        )
+    except (ImportError, RuntimeError, ValueError) as exc:
+        typer.echo(f"Visual indexing unavailable: {type(exc).__name__}", err=True)
+        raise typer.Exit(code=2) from None
+    typer.echo(json.dumps({"indexed_frames": count, "model_key": encoder.model_key}))
+
+
+@app.command("search-visual")
+def search_visual_command(query: str, limit: int = 20) -> None:
+    """Run genuine CLIP similarity search, not a mocked semantic model."""
+    settings = load_settings()
+    try:
+        from dataclasses import asdict
+        encoder = OpenClipEncoder()
+        moments = search_visual(
+            SQLiteVectorStore(settings.data_dir), encoder, query, k=limit
+        )
+        typer.echo(json.dumps([asdict(m) for m in moments]))
+    except (ImportError, RuntimeError, ValueError) as exc:
+        typer.echo(f"Visual search unavailable: {type(exc).__name__}", err=True)
+        raise typer.Exit(code=2) from None
