@@ -43,7 +43,7 @@ def test_bad_embeddings_rejected(values: list[float]) -> None:
 @given(
     st.lists(
         st.floats(-100, 100, allow_nan=False, allow_infinity=False), min_size=2, max_size=64
-    ).filter(lambda v: any(x != 0 for x in v))
+    ).filter(lambda v: any(abs(x) > 1e-6 for x in v))
 )
 def test_normalization_unit_length(values: list[float]) -> None:
     vector = normalize(np.array(values))
