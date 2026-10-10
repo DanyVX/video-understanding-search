@@ -142,9 +142,7 @@ def search_command(
     from vsearch.retrieve.service import search_moments
 
     try:
-        result = search_moments(
-            load_settings().data_dir, query, limit=limit, include_visual=visual
-        )
+        result = search_moments(load_settings().data_dir, query, limit=limit, include_visual=visual)
     except (ValueError, ImportError, RuntimeError) as exc:
         typer.echo(f"Search failed: {type(exc).__name__}", err=True)
         raise typer.Exit(code=2) from None
@@ -163,9 +161,9 @@ def transcribe_command(video_id: str, model_name: str = "tiny") -> None:
         typer.echo("Source not retained. Reingest with --keep-source.", err=True)
         raise typer.Exit(code=2)
     try:
-        segments = windows(WhisperTranscriber(model_name).transcribe(
-            Path(str(record["source_path"]))
-        ))
+        segments = windows(
+            WhisperTranscriber(model_name).transcribe(Path(str(record["source_path"])))
+        )
         TranscriptIndex(config.data_dir).replace(video_id, segments)
     except (RuntimeError, ValueError, OSError) as exc:
         typer.echo(f"Transcription failed: {type(exc).__name__}", err=True)
