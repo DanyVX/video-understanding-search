@@ -31,7 +31,10 @@ class CaptionIndex:
             )
 
     def replace(
-        self, video_id: str, segments: list[Segment], *,
+        self,
+        video_id: str,
+        segments: list[Segment],
+        *,
         model_key: str = "user-provided-v1",
     ) -> None:
         if not model_key.strip() or len(model_key) > 200:
@@ -75,13 +78,16 @@ class CaptionIndex:
                 if n == 0:
                     continue
                 idf = math.log(1 + (len(docs) - n + 0.5) / (n + 0.5))
-                normalization = tf[term] + 1.2 * (
-                    0.25 + 0.75 * len(words) / max(length, 1)
-                )
+                normalization = tf[term] + 1.2 * (0.25 + 0.75 * len(words) / max(length, 1))
                 score += idf * tf[term] * 2.2 / max(normalization, 1e-9)
             if score > 0:
-                found.append(TextHit(
-                    str(row["video_id"]), float(row["start"]), float(row["end"]),
-                    score, str(row["caption"])
-                ))
+                found.append(
+                    TextHit(
+                        str(row["video_id"]),
+                        float(row["start"]),
+                        float(row["end"]),
+                        score,
+                        str(row["caption"]),
+                    )
+                )
         return sorted(found, key=lambda hit: (-hit.score, hit.video_id, hit.start))[:limit]
