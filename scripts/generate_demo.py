@@ -27,25 +27,47 @@ def generate(output: Path, count: int = 20) -> list[dict[str, object]]:
         color = COLORS[index % len(COLORS)]
         filename = f"synthetic-{index:02d}-{color}.mp4"
         path = output / filename
-        subprocess.run([
-            "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error",
-            "-f", "lavfi", "-i", f"color=c={color}:s=320x180:r=10:d=6",
-            "-vf", f"drawbox=x={10 + index * 5}:y=60:w=40:h=40:color=white:t=fill",
-            "-an", "-c:v", "mpeg4", "-q:v", "6", "-y", str(path),
-        ], check=True, timeout=40, stdout=subprocess.DEVNULL,
-           stderr=subprocess.PIPE)
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-nostdin",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                f"color=c={color}:s=320x180:r=10:d=6",
+                "-vf",
+                f"drawbox=x={10 + index * 5}:y=60:w=40:h=40:color=white:t=fill",
+                "-an",
+                "-c:v",
+                "mpeg4",
+                "-q:v",
+                "6",
+                "-y",
+                str(path),
+            ],
+            check=True,
+            timeout=40,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+        )
         h = hashlib.sha256()
         with path.open("rb") as stream:
             for chunk in iter(lambda: stream.read(1024 * 1024), b""):
                 h.update(chunk)
-        records.append({
-            "filename": filename, "sha256": h.hexdigest(), "duration_seconds": 6,
-            "resolution": "320x180", "provenance": "generated locally by script",
-            "license": "self-created synthetic demonstration; no humans depicted",
-        })
-    (output / "manifest.json").write_text(
-        json.dumps(records, indent=2), encoding="utf-8"
-    )
+        records.append(
+            {
+                "filename": filename,
+                "sha256": h.hexdigest(),
+                "duration_seconds": 6,
+                "resolution": "320x180",
+                "provenance": "generated locally by script",
+                "license": "self-created synthetic demonstration; no humans depicted",
+            }
+        )
+    (output / "manifest.json").write_text(json.dumps(records, indent=2), encoding="utf-8")
     return records
 
 
