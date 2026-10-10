@@ -12,6 +12,7 @@ from typing import Protocol
 
 class Captioner(Protocol):
     model_id: str
+
     def caption(self, frame: Path, prompt: str) -> str: ...
 
 
@@ -23,9 +24,13 @@ class CaptionPlan:
     timeout_seconds: float = 10.0
 
     def validate(self) -> None:
-        if self.frames < 0 or not all(math.isfinite(x) and x >= 0 for x in (
-            self.cost_per_frame_usd, self.budget_usd,
-        )):
+        if self.frames < 0 or not all(
+            math.isfinite(x) and x >= 0
+            for x in (
+                self.cost_per_frame_usd,
+                self.budget_usd,
+            )
+        ):
             raise ValueError("Invalid caption budget")
         if not math.isfinite(self.timeout_seconds) or self.timeout_seconds <= 0:
             raise ValueError("Invalid caption timeout")
@@ -73,8 +78,9 @@ class CaptionCache:
         target = self.root / f"{key}.json"
         staged = target.with_suffix(".part")
         try:
-            staged.write_text(json.dumps({"caption": caption}, ensure_ascii=False),
-                              encoding="utf-8")
+            staged.write_text(
+                json.dumps({"caption": caption}, ensure_ascii=False), encoding="utf-8"
+            )
             staged.replace(target)
         finally:
             staged.unlink(missing_ok=True)
