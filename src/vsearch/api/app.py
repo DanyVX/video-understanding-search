@@ -56,8 +56,10 @@ def search(request: SearchRequest) -> dict[str, object]:
     """Text-first hybrid retrieval; visual inference explicitly optional."""
     try:
         results = search_moments(
-            load_settings().data_dir, request.query,
-            limit=request.limit, include_visual=request.include_visual,
+            load_settings().data_dir,
+            request.query,
+            limit=request.limit,
+            include_visual=request.include_visual,
         )
     except (ValueError, ImportError, RuntimeError) as exc:
         raise HTTPException(status_code=422, detail=type(exc).__name__) from None
