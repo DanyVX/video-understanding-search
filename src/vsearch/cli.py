@@ -105,3 +105,78 @@ def delete_command(video_id: str) -> None:
     typer.echo(json.dumps({"deleted": existed}))
     if not existed:
         raise typer.Exit(code=1)
+
+
+@app.command("index-visual")
+def index_visual_command(video_id: str, batch_size: int = 8) -> None:
+    """Opt in to loading OpenCLIP weights to index one video's thumbnails."""
+    from vsearch.embed.visual import OpenClipEncoder, index_frames
+    from vsearch.index.vectors import SQLiteVectorStore
+
+    config = load_settings()
+    db = Manifest(config.data_dir)
+    video = db.get_video(video_id)
+    if video is None or video["status"] != "done":
+        typer.echo("Video must exist and finish ingest first", err=True)
+        raise typer.Exit(code=2)
+    try:
+        model = OpenClipEncoder()
+        indexed = index_frames(
+            db, SQLiteVectorStore(config.data_dir), model, video_id, batch_size=batch_size
+        )
+    except (ImportError, RuntimeError, ValueError, OSError) as exc:
+        typer.echo(f"Visual indexing failed: {type(exc).__name__}", err=True)
+        raise typer.Exit(code=2) from None
+    typer.echo(json.dumps({"indexed_frames": indexed, "model_key": model.model_key}))
+
+
+@app.command("search")
+def search_command(
+    query: str,
+    limit: Annotated[int, typer.Option(min=1, max=50)] = 10,
+    visual: bool = False,
+) -> None:
+    """Search indexed speech, optionally adding true CLIP image/text retrieval."""
+    from dataclasses import asdict
+
+    from vsearch.retrieve.service import search_moments
+
+    try:
+        result = search_moments(load_settings().data_dir, query, limit=limit, include_visual=visual)
+    except (ValueError, ImportError, RuntimeError) as exc:
+        typer.echo(f"Search failed: {type(exc).__name__}", err=True)
+        raise typer.Exit(code=2) from None
+    typer.echo(json.dumps([asdict(m) for m in result]))
+
+
+@app.command("transcribe")
+def transcribe_command(video_id: str, model_name: str = "tiny") -> None:
+    """Run optional local Whisper model on an explicitly retained source video."""
+    from vsearch.asr.transcript import WhisperTranscriber, windows
+    from vsearch.index.transcripts import TranscriptIndex
+
+    config = load_settings()
+    record = Manifest(config.data_dir).get_video(video_id)
+    if not record or not record["source_path"]:
+        typer.echo("Source not retained. Reingest with --keep-source.", err=True)
+        raise typer.Exit(code=2)
+    try:
+        segments = windows(
+            WhisperTranscriber(model_name).transcribe(Path(str(record["source_path"])))
+        )
+        TranscriptIndex(config.data_dir).replace(video_id, segments)
+    except (RuntimeError, ValueError, OSError) as exc:
+        typer.echo(f"Transcription failed: {type(exc).__name__}", err=True)
+        raise typer.Exit(code=2) from None
+    typer.echo(json.dumps({"segments": len(segments)}))
+
+
+@app.command("serve")
+def serve_command(host: str = "127.0.0.1", port: int = 8000) -> None:
+    """Run the local service. Public hosting requires authentication first."""
+    import uvicorn
+
+    if host not in ("127.0.0.1", "::1", "localhost"):
+        typer.echo("Refusing non-loopback binding without auth", err=True)
+        raise typer.Exit(code=2)
+    uvicorn.run("vsearch.api.app:app", host=host, port=port)

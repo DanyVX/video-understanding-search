@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
 from vsearch.index.manifest import Manifest
-from vsearch.index.transcripts import TranscriptIndex
+from vsearch.retrieve.service import search_moments
 from vsearch.settings import load_settings
 
 VIDEO_ID = re.compile(r"^[a-f0-9]{24}$")
@@ -20,6 +20,7 @@ app = FastAPI(title="Video Understanding Search", version="0.1.0a0")
 class SearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=512)
     limit: int = Field(default=10, ge=1, le=50)
+    include_visual: bool = False
 
 
 def manifest() -> Manifest:
@@ -52,11 +53,18 @@ def video_moments(video_id: str) -> list[dict[str, object]]:
 
 @app.post("/v1/search")
 def search(request: SearchRequest) -> dict[str, object]:
-    """Speech-only baseline until M2's visual model is integrated."""
-    results = TranscriptIndex(load_settings().data_dir).search(request.query, request.limit)
+    """Text-first hybrid retrieval; visual inference explicitly optional."""
+    try:
+        results = search_moments(
+            load_settings().data_dir,
+            request.query,
+            limit=request.limit,
+            include_visual=request.include_visual,
+        )
+    except (ValueError, ImportError, RuntimeError) as exc:
+        raise HTTPException(status_code=422, detail=type(exc).__name__) from None
     return {
-        "query": request.query,
-        "modality": "transcript_bm25",
+        "modality": "hybrid" if request.include_visual else "transcript_bm25",
         "results": [asdict(hit) for hit in results],
     }
 
@@ -77,12 +85,31 @@ def thumbnail(video_id: str, frame_id: str) -> FileResponse:
     return FileResponse(target, media_type="image/jpeg")
 
 
+@app.get("/v1/media/{video_id}")
+def media(video_id: str) -> FileResponse:
+    """Serve only explicitly retained local sources; allows HTTP Range seeking."""
+    from pathlib import Path
+
+    require_id(video_id)
+    record = manifest().get_video(video_id)
+    if record is None or not record["source_path"]:
+        raise HTTPException(status_code=404, detail="Media not retained")
+    candidate = Path(str(record["source_path"]))
+    if not candidate.is_file():
+        raise HTTPException(status_code=404, detail="Media source unavailable")
+    return FileResponse(candidate, headers={"Cache-Control": "no-store"})
+
+
 @app.delete("/v1/videos/{video_id}")
 def delete(video_id: str) -> dict[str, bool]:
     from vsearch.ingest.pipeline import delete_video
 
     require_id(video_id)
-    return {"deleted": delete_video(manifest(), video_id)}
+    removed = delete_video(manifest(), video_id)
+    from vsearch.index.vectors import SQLiteVectorStore
+
+    SQLiteVectorStore(load_settings().data_dir).delete_video(video_id)
+    return {"deleted": removed}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -114,5 +141,9 @@ const card=document.createElement('article');
 const title=document.createElement('strong');title.textContent='Video '+hit.video_id;
 const time=document.createElement('small');time.textContent=' · '+hit.start.toFixed(2)+'s';
 const snippet=document.createElement('p');snippet.textContent=hit.snippet;
-card.append(title,time,snippet);results.append(card);
+const video=document.createElement('video');video.controls=true;
+video.preload='metadata';video.style.width='100%';
+video.src='/v1/media/'+encodeURIComponent(hit.video_id);
+video.addEventListener('loadedmetadata',()=>{video.currentTime=hit.start;},{once:true});
+card.append(title,time,snippet,video);results.append(card);
 }});</script></body></html>"""

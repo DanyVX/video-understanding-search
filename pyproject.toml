@@ -14,11 +14,16 @@ dependencies = [
   "pydantic-settings==2.6.1",
   "typer==0.26.3",
   "Pillow==12.3.0",
+  "numpy==2.3.3",
   "fastapi==0.143.0",
   "uvicorn==0.54.0",
 ]
 
 [project.optional-dependencies]
+vision = ["open-clip-torch==3.3.0"]
+vector = ["faiss-cpu==1.12.0"]
+asr = ["faster-whisper==1.2.1"]
+
 dev = [
   "httpx==0.28.1",
   "hypothesis==6.123.17",
