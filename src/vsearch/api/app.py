@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
+from vsearch.api.jobs import JOBS, JobError
 from vsearch.index.manifest import Manifest
 from vsearch.retrieve.service import search_moments
 from vsearch.settings import load_settings
@@ -23,6 +24,11 @@ class SearchRequest(BaseModel):
     include_visual: bool = False
 
 
+class IngestRequest(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    keep_source: bool = False
+
+
 def manifest() -> Manifest:
     return Manifest(load_settings().data_dir)
 
@@ -35,6 +41,33 @@ def require_id(video_id: str) -> None:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/v1/ingest", status_code=202)
+def create_ingest(request: IngestRequest) -> dict[str, object]:
+    """Queue a staged local file under DATA_DIR/incoming; no path-based uploads."""
+    config = load_settings()
+    try:
+        job = JOBS.submit(
+            config.data_dir,
+            request.filename,
+            config.max_upload_bytes,
+            keep_source=request.keep_source,
+        )
+    except JobError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    return asdict(job)
+
+
+@app.get("/v1/jobs/{job_id}")
+def ingest_status(job_id: str) -> dict[str, object]:
+    """Job state is process-local; the durable manifest survives restarts."""
+    if not re.fullmatch(r"[a-f0-9]{24}", job_id):
+        raise HTTPException(status_code=400, detail="Invalid job ID")
+    job = JOBS.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return asdict(job)
 
 
 @app.get("/v1/videos")
