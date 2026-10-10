@@ -66,7 +66,7 @@ class WhisperTranscriber:
 
     def transcribe(self, video: Path) -> list[Segment]:
         try:
-            from faster_whisper import WhisperModel
+            from faster_whisper import WhisperModel  # type: ignore[import-not-found]
         except ImportError as exc:
             raise RuntimeError(
                 "Install the optional faster-whisper dependency for speech recognition"
