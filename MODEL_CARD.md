@@ -38,8 +38,10 @@ measurement on permissioned natural-video data.
 
 `src/vsearch/embed/captions.py` defines a provider protocol with a dry-run
 spending plan and SHA-256 cache keyed by frame bytes/model/prompt version.
-There is **no selected caption foundation model** and no live provider shipped;
-neither model results nor accuracy are asserted. The default spending limit
+There is **no selected caption foundation model** and no live provider shipped.
+An independent SQLite/BM25 caption channel accepts manually reviewed JSON records
+with timestamps and a model-key label. Neither generated caption accuracy nor
+real-video retrieval accuracy is asserted. The default spending limit
 is zero and must be overridden deliberately. A real provider needs strong
 timeout and billing enforcement independent of the planner.
 
