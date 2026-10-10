@@ -30,3 +30,19 @@ def test_report_offline_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
     assert report["git_commit"]
     assert "library_versions" in report
     assert "email" not in report
+
+
+def test_network_error_handled(monkeypatch: pytest.MonkeyPatch) -> None:
+    def offline(*args: object, **kwargs: object) -> None:
+        raise OSError("offline")
+
+    monkeypatch.setattr(environment.socket, "create_connection", offline)
+    assert environment._network_status() == "unreachable"
+
+
+def test_unknown_ram_is_explicit(monkeypatch: pytest.MonkeyPatch) -> None:
+    def unavailable(_key: str) -> int:
+        raise OSError("not supported")
+
+    monkeypatch.setattr(environment.os, "sysconf", unavailable, raising=False)
+    assert environment._total_ram_mb() is None
