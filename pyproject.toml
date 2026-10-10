@@ -14,10 +14,13 @@ dependencies = [
   "pydantic-settings==2.6.1",
   "typer==0.26.3",
   "Pillow==12.3.0",
+  "fastapi==0.143.0",
+  "uvicorn==0.54.0",
 ]
 
 [project.optional-dependencies]
 dev = [
+  "httpx==0.28.1",
   "hypothesis==6.123.17",
   "mypy==1.14.1",
   "pip-audit==2.7.3",
