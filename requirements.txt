@@ -1,0 +1,3 @@
+# pip fallback. Direct dependencies are pinned in pyproject.toml.
+# Transitive lockfile generation is pending a networked, verified setup.
+-e .[dev]
