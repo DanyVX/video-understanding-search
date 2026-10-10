@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 
 @dataclass(frozen=True)
@@ -36,8 +36,7 @@ def temporal_iou(a: tuple[float, float], b: tuple[float, float]) -> float:
     """Half-open intervals. Zero-duration events have IoU zero."""
     x0, x1 = a
     y0, y1 = b
-    if (not all(math.isfinite(v) for v in (x0, x1, y0, y1))
-            or x0 > x1 or y0 > y1):
+    if not all(math.isfinite(v) for v in (x0, x1, y0, y1)) or x0 > x1 or y0 > y1:
         raise ValueError("Invalid temporal range")
     intersection = max(0.0, min(x1, y1) - max(x0, y0))
     union = max(x1, y1) - min(x0, y0)
@@ -70,16 +69,17 @@ def moment_recall(
     relevant = [a for a in annotations if a.answerable]
     if not relevant:
         return 0.0
-    return float(any(
-        a.video_id == p.video_id and
-        temporal_iou((a.start, a.end), (p.start, p.end)) >= threshold
-        for a in relevant for p in predictions[:k]
-    ))
+    return float(
+        any(
+            a.video_id == p.video_id
+            and temporal_iou((a.start, a.end), (p.start, p.end)) >= threshold
+            for a in relevant
+            for p in predictions[:k]
+        )
+    )
 
 
-def reciprocal_rank(
-    annotations: Sequence[Annotation], predictions: Sequence[Prediction]
-) -> float:
+def reciprocal_rank(annotations: Sequence[Annotation], predictions: Sequence[Prediction]) -> float:
     relevant = {a.video_id for a in annotations if a.answerable}
     for rank, pred in enumerate(predictions, start=1):
         if pred.video_id in relevant:
@@ -96,11 +96,15 @@ def hit_within(
 ) -> float:
     if tolerance < 0 or not math.isfinite(tolerance) or k < 1:
         raise ValueError("Invalid tolerance")
-    return float(any(
-        a.video_id == p.video_id and
-        abs((a.start + a.end) / 2 - (p.start + p.end) / 2) <= tolerance
-        for a in annotations if a.answerable for p in predictions[:k]
-    ))
+    return float(
+        any(
+            a.video_id == p.video_id
+            and abs((a.start + a.end) / 2 - (p.start + p.end) / 2) <= tolerance
+            for a in annotations
+            if a.answerable
+            for p in predictions[:k]
+        )
+    )
 
 
 def bootstrap_interval(
@@ -116,9 +120,6 @@ def bootstrap_interval(
     generator = random.Random(seed)
     n = len(samples)
     estimates = sorted(
-        sum(generator.choice(samples) for _ in range(n)) / n
-        for _ in range(iterations)
+        sum(generator.choice(samples) for _ in range(n)) / n for _ in range(iterations)
     )
-    return estimates[int(0.025 * (iterations - 1))], estimates[
-        int(0.975 * (iterations - 1))
-    ]
+    return estimates[int(0.025 * (iterations - 1))], estimates[int(0.975 * (iterations - 1))]

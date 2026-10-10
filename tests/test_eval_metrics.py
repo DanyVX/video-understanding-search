@@ -3,12 +3,17 @@
 import math
 
 import pytest
-
-from eval.metrics import (
-    Annotation, Prediction, bootstrap_interval, hit_within, moment_recall,
-    reciprocal_rank, temporal_iou, video_recall,
-)
 from eval.evaluate import compute
+from eval.metrics import (
+    Annotation,
+    Prediction,
+    bootstrap_interval,
+    hit_within,
+    moment_recall,
+    reciprocal_rank,
+    temporal_iou,
+    video_recall,
+)
 
 
 def test_iou_exact() -> None:
@@ -22,8 +27,7 @@ def test_video_and_moment_separate() -> None:
     wrong_moment = [Prediction("a", 40, 50, 10)]
     assert video_recall(annotations, wrong_moment, k=1) == 1
     assert moment_recall(annotations, wrong_moment, k=1) == 0
-    assert reciprocal_rank(annotations, [Prediction("b", 1, 2, 3),
-                                         Prediction("a", 1, 2, 2)]) == 0.5
+    assert reciprocal_rank(annotations, [Prediction("b", 1, 2, 3), Prediction("a", 1, 2, 2)]) == 0.5
     assert hit_within(annotations, wrong_moment) == 0
 
 
@@ -43,11 +47,12 @@ def test_validation() -> None:
 
 
 def test_evaluator_works_without_video() -> None:
-    rows = [{
-        "annotations": [{"query_id": "q", "video_id": "v",
-                         "start": 1, "end": 3}],
-        "predictions": [{"video_id": "v", "start": 1, "end": 3, "score": 1}],
-    }]
+    rows = [
+        {
+            "annotations": [{"query_id": "q", "video_id": "v", "start": 1, "end": 3}],
+            "predictions": [{"video_id": "v", "start": 1, "end": 3, "score": 1}],
+        }
+    ]
     scores = compute(rows)
     assert scores["video_recall_at_5"] == 1
     assert scores["moment_recall_at_5_tiou_0_5"] == 1
