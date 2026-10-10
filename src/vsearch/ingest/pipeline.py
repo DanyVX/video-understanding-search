@@ -52,7 +52,9 @@ def _distance(first: str, second: str) -> int:
     return (int(first, 16) ^ int(second, 16)).bit_count()
 
 
-def ingest(path: Path, manifest: Manifest, options: IngestOptions | None = None) -> dict[str, object]:
+def ingest(
+    path: Path, manifest: Manifest, options: IngestOptions | None = None
+) -> dict[str, object]:
     options = options or IngestOptions()
     options.validate()
     path = path.expanduser().resolve(strict=True)
@@ -65,8 +67,15 @@ def ingest(path: Path, manifest: Manifest, options: IngestOptions | None = None)
         if not manifest.verify():
             return current
     manifest.upsert_video(
-        video_id, path.name, str(path) if options.keep_source else None,
-        hash_value, info.duration, info.width, info.height, info.has_audio, INGEST_VERSION,
+        video_id,
+        path.name,
+        str(path) if options.keep_source else None,
+        hash_value,
+        info.duration,
+        info.width,
+        info.height,
+        info.has_audio,
+        INGEST_VERSION,
     )
     manifest.set_status(video_id, "processing")
     target_dir = manifest.root / "thumbs" / video_id
@@ -86,10 +95,26 @@ def ingest(path: Path, manifest: Manifest, options: IngestOptions | None = None)
                 temp = Path(temp_name)
                 if not info.audio_only:
                     result = run_media_command(
-                        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin",
-                         "-ss", str(start), "-i", str(path), "-t", str(span),
-                         "-vf", f"fps={options.fps},scale='min(480,iw)':-2",
-                         "-q:v", "5", "-vsync", "vfr", str(temp / "frame_%06d.jpg")],
+                        [
+                            "ffmpeg",
+                            "-hide_banner",
+                            "-loglevel",
+                            "error",
+                            "-nostdin",
+                            "-ss",
+                            str(start),
+                            "-i",
+                            str(path),
+                            "-t",
+                            str(span),
+                            "-vf",
+                            f"fps={options.fps},scale='min(480,iw)':-2",
+                            "-q:v",
+                            "5",
+                            "-vsync",
+                            "vfr",
+                            str(temp / "frame_%06d.jpg"),
+                        ],
                         timeout=max(60, span * 4),
                     )
                     if result.returncode != 0:
@@ -115,9 +140,7 @@ def ingest(path: Path, manifest: Manifest, options: IngestOptions | None = None)
                             scene_id += 1  # Sample-based scene heuristic, not full scene detect.
                     prev_hash = hash_hex
                     timestamp = min(info.duration, start + index / options.fps)
-                    fid = hashlib.sha256(
-                        f"{video_id}:{timestamp:.3f}".encode()
-                    ).hexdigest()[:24]
+                    fid = hashlib.sha256(f"{video_id}:{timestamp:.3f}".encode()).hexdigest()[:24]
                     relative = Path("thumbs") / video_id / f"{fid}.jpg"
                     destination = manifest.root / relative
                     try:

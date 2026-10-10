@@ -66,7 +66,9 @@ def ingest_command(
 
     try:
         settings = load_settings()
-        result = ingest(path, Manifest(settings.data_dir), IngestOptions(fps=fps, keep_source=keep_source))
+        result = ingest(
+            path, Manifest(settings.data_dir), IngestOptions(fps=fps, keep_source=keep_source)
+        )
         typer.echo(json.dumps(result))
     except (ValidationError, MediaError, OSError, ValueError) as exc:
         typer.echo(f"Ingest failed: {type(exc).__name__}", err=True)

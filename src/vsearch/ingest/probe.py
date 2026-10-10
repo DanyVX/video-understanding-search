@@ -27,7 +27,9 @@ class MediaInfo:
     audio_only: bool = False
 
 
-def run_media_command(args: list[str], *, timeout: float = 120) -> subprocess.CompletedProcess[bytes]:
+def run_media_command(
+    args: list[str], *, timeout: float = 120
+) -> subprocess.CompletedProcess[bytes]:
     """Never invoke a shell: Unicode and adversarial filenames are literal arguments."""
     try:
         return subprocess.run(args, check=False, capture_output=True, timeout=timeout)
@@ -53,8 +55,8 @@ def probe(path: Path, *, executable: str = "ffprobe") -> MediaInfo:
     if shutil.which(executable) is None:
         raise MediaError("ffprobe is unavailable; install it locally before ingest")
     result = run_media_command(
-        [executable, "-v", "error", "-show_format", "-show_streams",
-         "-of", "json", str(path)], timeout=30
+        [executable, "-v", "error", "-show_format", "-show_streams", "-of", "json", str(path)],
+        timeout=30,
     )
     if result.returncode:
         raise MediaError("ffprobe rejected media: unsupported, DRM-protected or corrupt")
@@ -78,8 +80,12 @@ def probe(path: Path, *, executable: str = "ffprobe") -> MediaInfo:
         rotations = [d.get("rotation") for d in side_data if "rotation" in d]
         rotation = int(rotations[0]) if rotations else int(video.get("tags", {}).get("rotate", 0))
         return MediaInfo(
-            duration=duration, width=width, height=height, has_audio=audio,
-            rotation=rotation, video_codec=str(video.get("codec_name", "")),
+            duration=duration,
+            width=width,
+            height=height,
+            has_audio=audio,
+            rotation=rotation,
+            video_codec=str(video.get("codec_name", "")),
             audio_only=not bool(videos),
         )
     except (ValueError, TypeError, KeyError, OverflowError, json.JSONDecodeError) as exc:

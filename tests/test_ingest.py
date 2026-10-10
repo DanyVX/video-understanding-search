@@ -46,13 +46,30 @@ def test_sha256_unicode_filename(tmp_path: Path) -> None:
     assert sha256_file(p) == sha256_file(p)
 
 
-@pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="ffmpeg missing")
+@pytest.mark.skipif(
+    not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="ffmpeg missing"
+)
 def test_synthetic_video_ingest_dedupe_and_delete(tmp_path: Path) -> None:
     movie = tmp_path / "synthetic video Ω.mp4"
     subprocess.run(
-        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi",
-         "-i", "testsrc=size=160x96:rate=2", "-t", "2.5", "-pix_fmt", "yuv420p",
-         "-y", str(movie)], check=True, timeout=30,
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc=size=160x96:rate=2",
+            "-t",
+            "2.5",
+            "-pix_fmt",
+            "yuv420p",
+            "-y",
+            str(movie),
+        ],
+        check=True,
+        timeout=30,
     )
     manifest = Manifest(tmp_path / "state")
     first = ingest(movie, manifest, IngestOptions(fps=1, chunk_seconds=2))

@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
-
 
 SCHEMA = """
 PRAGMA foreign_keys=ON;
@@ -77,12 +76,15 @@ class Manifest:
 
     def list_videos(self) -> list[dict[str, object]]:
         with self.connection() as conn:
-            return [dict(row) for row in conn.execute("SELECT * FROM videos ORDER BY created_at DESC")]
+            return [
+                dict(row) for row in conn.execute("SELECT * FROM videos ORDER BY created_at DESC")
+            ]
 
     def frames(self, video_id: str) -> list[dict[str, object]]:
         with self.connection() as conn:
             return [
-                dict(row) for row in conn.execute(
+                dict(row)
+                for row in conn.execute(
                     "SELECT * FROM frames WHERE video_id=? ORDER BY t", (video_id,)
                 )
             ]
@@ -90,15 +92,24 @@ class Manifest:
     def chunks_done(self, video_id: str) -> set[int]:
         with self.connection() as conn:
             return {
-                int(row[0]) for row in conn.execute(
+                int(row[0])
+                for row in conn.execute(
                     "SELECT chunk_number FROM chunks WHERE video_id=? AND status='done'",
                     (video_id,),
                 )
             }
 
     def upsert_video(
-        self, video_id: str, name: str, source_path: str | None, sha256: str,
-        duration: float, width: int, height: int, has_audio: bool, version: str
+        self,
+        video_id: str,
+        name: str,
+        source_path: str | None,
+        sha256: str,
+        duration: float,
+        width: int,
+        height: int,
+        has_audio: bool,
+        version: str,
     ) -> None:
         with self.connection() as conn:
             conn.execute(
@@ -111,8 +122,18 @@ class Manifest:
                                THEN status ELSE 'pending' END,
                    ingest_version=excluded.ingest_version,
                    source_path=excluded.source_path""",
-                (video_id, name, source_path, sha256, duration, width, height,
-                 int(has_audio), "pending", version),
+                (
+                    video_id,
+                    name,
+                    source_path,
+                    sha256,
+                    duration,
+                    width,
+                    height,
+                    int(has_audio),
+                    "pending",
+                    version,
+                ),
             )
 
     def set_status(self, video_id: str, status: str, error: str | None = None) -> None:
@@ -144,8 +165,10 @@ class Manifest:
                 """INSERT INTO frames
                    (id,video_id,t,scene_id,frame_hash,thumbnail,chunk_number)
                    VALUES (?,?,?,?,?,?,?)""",
-                [(fid, video_id, t, scene, hash_value, thumb, chunk)
-                 for fid, t, scene, hash_value, thumb in frames],
+                [
+                    (fid, video_id, t, scene, hash_value, thumb, chunk)
+                    for fid, t, scene, hash_value, thumb in frames
+                ],
             )
             conn.execute(
                 "UPDATE chunks SET status='done',error=NULL WHERE video_id=? AND chunk_number=?",
