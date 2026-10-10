@@ -37,3 +37,15 @@ and scene type when sample sizes allow.
 Weak temporal ordering, relations, negation, counting, OCR, non-English prompts,
 ASR hallucination and caption hallucination. No measured project accuracy is
 available; see docs/RESULTS.md.
+
+## M2 implementation
+
+The lazy OpenCLIP implementation uses the documented `ViT-B-32` and
+`laion2b_s34b_b79k` keys. Default tests use deterministic mock embeddings,
+**not** pretrained weights and **not** evidence of retrieval quality.
+The optional `vision` extra may install large torch dependencies and download
+model weights on first use. Do not run that heavy path without first checking
+system disk/network cost, weight size and license. The model signature must
+be bumped whenever weights/tokenizer/preprocessing change. The current
+model-key constant is a baseline descriptor, not a cryptographic checkpoint
+revision; production-grade checksum pinning is still incomplete.
