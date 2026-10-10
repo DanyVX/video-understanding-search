@@ -76,15 +76,16 @@ class TranscriptIndex:
                 if not df[term]:
                     continue
                 idf = math.log(1 + (n - df[term] + 0.5) / (df[term] + 0.5))
-                denominator = tf[term] + 1.2 * (
-                    1 - 0.75 + 0.75 * len(doc) / max(avg_length, 1)
-                )
+                denominator = tf[term] + 1.2 * (1 - 0.75 + 0.75 * len(doc) / max(avg_length, 1))
                 score += idf * tf[term] * 2.2 / max(denominator, 1e-9)
             if score > 0:
-                results.append(TextHit(
-                    str(row["video_id"]), float(row["start"]), float(row["end"]),
-                    score, str(row["text"])
-                ))
-        return sorted(results, key=lambda hit: (
-            -hit.score, hit.video_id, hit.start
-        ))[:limit]
+                results.append(
+                    TextHit(
+                        str(row["video_id"]),
+                        float(row["start"]),
+                        float(row["end"]),
+                        score,
+                        str(row["text"]),
+                    )
+                )
+        return sorted(results, key=lambda hit: (-hit.score, hit.video_id, hit.start))[:limit]

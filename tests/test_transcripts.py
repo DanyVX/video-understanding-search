@@ -44,8 +44,7 @@ def test_tokenize_unicode() -> None:
 def test_rank_and_delete(tmp_path: Path) -> None:
     manifest = Manifest(tmp_path)
     for identifier in ("a" * 24, "b" * 24):
-        manifest.upsert_video(identifier, "test.mp4", None, identifier, 10, 100, 50,
-                              True, "v1")
+        manifest.upsert_video(identifier, "test.mp4", None, identifier, 10, 100, 50, True, "v1")
         manifest.set_status(identifier, "done")
     index = TranscriptIndex(tmp_path)
     index.replace("a" * 24, [Segment(1, 3, "someone opens a laptop")])

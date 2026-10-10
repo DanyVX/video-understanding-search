@@ -54,8 +54,11 @@ class WhisperTranscriber:
     """faster-whisper provider; nothing is downloaded until explicitly used."""
 
     def __init__(
-        self, model_name: str = "tiny", *, language: str | None = None,
-        local_files_only: bool = True
+        self,
+        model_name: str = "tiny",
+        *,
+        language: str | None = None,
+        local_files_only: bool = True,
     ) -> None:
         self.model_name = model_name
         self.language = language
@@ -69,22 +72,29 @@ class WhisperTranscriber:
                 "Install the optional faster-whisper dependency for speech recognition"
             ) from exc
         model = WhisperModel(
-            self.model_name, device="cpu", compute_type="int8",
+            self.model_name,
+            device="cpu",
+            compute_type="int8",
             local_files_only=self.local_files_only,
         )
         segments, _info = model.transcribe(
-            str(video), beam_size=3, vad_filter=True,
-            word_timestamps=True, language=self.language,
+            str(video),
+            beam_size=3,
+            vad_filter=True,
+            word_timestamps=True,
+            language=self.language,
         )
-        return filter_segments([
-            Segment(
-                float(segment.start),
-                float(segment.end),
-                str(segment.text),
-                float(segment.no_speech_prob),
-            )
-            for segment in segments
-        ])
+        return filter_segments(
+            [
+                Segment(
+                    float(segment.start),
+                    float(segment.end),
+                    str(segment.text),
+                    float(segment.no_speech_prob),
+                )
+                for segment in segments
+            ]
+        )
 
 
 def windows(segments: list[Segment], *, max_seconds: float = 15.0) -> list[Segment]:
@@ -97,11 +107,19 @@ def windows(segments: list[Segment], *, max_seconds: float = 15.0) -> list[Segme
         if not seg.valid():
             continue
         if current and seg.end - current[0].start > max_seconds:
-            result.append(Segment(current[0].start, current[-1].end,
-                                  " ".join(item.text.strip() for item in current)))
+            result.append(
+                Segment(
+                    current[0].start,
+                    current[-1].end,
+                    " ".join(item.text.strip() for item in current),
+                )
+            )
             current = []
         current.append(seg)
     if current:
-        result.append(Segment(current[0].start, current[-1].end,
-                              " ".join(item.text.strip() for item in current)))
+        result.append(
+            Segment(
+                current[0].start, current[-1].end, " ".join(item.text.strip() for item in current)
+            )
+        )
     return result
