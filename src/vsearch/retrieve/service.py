@@ -19,7 +19,11 @@ def _visual_model() -> object:
 
 
 def search_moments(
-    root: Path, query: str, *, limit: int = 10, include_visual: bool = False,
+    root: Path,
+    query: str,
+    *,
+    limit: int = 10,
+    include_visual: bool = False,
     weights: dict[str, float] | None = None,
 ) -> list[Moment]:
     """Return time-bounded moments. No ML model is loaded for text-only searches."""
@@ -31,9 +35,14 @@ def search_moments(
     channels: dict[str, list[Hit]] = {
         "transcript": [
             Hit(
-                result.video_id, result.start, result.end,
-                result.score, "transcript", result.snippet,
-            ) for result in transcript_hits
+                result.video_id,
+                result.start,
+                result.end,
+                result.score,
+                "transcript",
+                result.snippet,
+            )
+            for result in transcript_hits
         ]
     }
     if include_visual:
@@ -48,9 +57,14 @@ def search_moments(
             )
             channels["visual"] = [
                 Hit(
-                    item.video_id, max(0, item.t - 0.5),
-                    item.t + 0.5, item.score, "visual",
-                ) for item in vectors if math.isfinite(item.score)
+                    item.video_id,
+                    max(0, item.t - 0.5),
+                    item.t + 0.5,
+                    item.score,
+                    "visual",
+                )
+                for item in vectors
+                if math.isfinite(item.score)
             ]
     ranked = reciprocal_rank_fusion(channels, weights=weights)
     return merge_moments(ranked, gap_tolerance=2.0, min_seconds=0.5, limit=limit)
