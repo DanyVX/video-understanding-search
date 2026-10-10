@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import re
 from dataclasses import asdict
-from pathlib import Path
-from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
@@ -56,8 +54,11 @@ def video_moments(video_id: str) -> list[dict[str, object]]:
 def search(request: SearchRequest) -> dict[str, object]:
     """Speech-only baseline until M2's visual model is integrated."""
     results = TranscriptIndex(load_settings().data_dir).search(request.query, request.limit)
-    return {"query": request.query, "modality": "transcript_bm25",
-            "results": [asdict(hit) for hit in results]}
+    return {
+        "query": request.query,
+        "modality": "transcript_bm25",
+        "results": [asdict(hit) for hit in results],
+    }
 
 
 @app.get("/v1/thumbnails/{video_id}/{frame_id}")
@@ -79,6 +80,7 @@ def thumbnail(video_id: str, frame_id: str) -> FileResponse:
 @app.delete("/v1/videos/{video_id}")
 def delete(video_id: str) -> dict[str, bool]:
     from vsearch.ingest.pipeline import delete_video
+
     require_id(video_id)
     return {"deleted": delete_video(manifest(), video_id)}
 
