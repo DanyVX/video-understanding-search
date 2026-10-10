@@ -112,6 +112,12 @@ class Manifest:
         version: str,
     ) -> None:
         with self.connection() as conn:
+            previous = conn.execute(
+                "SELECT ingest_version FROM videos WHERE id=?", (video_id,)
+            ).fetchone()
+            if previous and previous["ingest_version"] != version:
+                conn.execute("DELETE FROM chunks WHERE video_id=?", (video_id,))
+                conn.execute("DELETE FROM frames WHERE video_id=?", (video_id,))
             conn.execute(
                 """INSERT INTO videos
                    (id,original_name,source_path,sha256,duration,width,height,
